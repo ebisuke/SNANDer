@@ -1,12 +1,13 @@
 # To assist in cross-compiling
 CC=gcc
-LDFLAGS=-pthread -L./lusb_build/lib -lusb-1.0
+LIBS="libudev libusb-1.0"
+LDFLAGS=-pthread `pkg-config --libs $(LIBS)`
 TOPDIR=$(shell pwd)
 
 EEPROM_SUPPORT = y
 
 BIGFILES=-D_FILE_OFFSET_BITS=64
-CFLAGS=-O2 -std=gnu99 -static -Wall -I./lusb_build/include $(BIGFILES)
+CFLAGS=-O2 -std=gnu99 -Wall -I./lusb_build/include $(BIGFILES) `pkg-config --cflags $(LIBS)`
 
 OBJS= flashcmd_api.o spi_controller.o spi_nand_flash.o spi_nor_flash.o ch341a_spi.o timer.o main.o
 
@@ -18,20 +19,11 @@ endif
 
 all: SNANDer
 
-.lusb_install:
-	mkdir -p lusb_build
-	cd lusb_build; \
-	../libusb-1.0.22/configure --prefix=$(TOPDIR)/lusb_build --disable-udev; \
-	make; \
-	make install
-	touch $@
-
-SNANDer: .lusb_install $(OBJS)
+SNANDer: $(OBJS)
 	$(CC) $(CFLAGS) -s -o $@ $(OBJS) $(LDFLAGS)
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<
 
-clean: 
-	rm -f *.o SNANDer* .lusb_install*
-	rm -rf lusb_build*
+clean:
+	rm -f *.o SNANDer*
