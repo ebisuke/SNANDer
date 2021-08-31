@@ -63,6 +63,7 @@ struct spi_controller {
 };
 
 extern const struct spi_controller ch341a_spictrl;
+extern const struct spi_controller mstarddc_spictrl;
 
 extern const struct spi_controller *spi_controller;
 

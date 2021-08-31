@@ -34,6 +34,7 @@ extern unsigned int bsize;
 
 static const struct spi_controller *spi_controllers[] = {
 	&ch341a_spictrl,
+	&mstarddc_spictrl,
 };
 
 #ifdef EEPROM_SUPPORT
@@ -68,7 +69,7 @@ void usage(void)
 	const char use[] =
 		"  Usage:\n"\
 		" -h             display this message\n"\
-		" -p             programmer {ch341a} (default ch341a)\n"\
+		" -p             programmer {ch341a|mstarddc} (default ch341a)\n"\
 		" -c             programmer connection string\n"\
 		" -d             disable internal ECC(use read and write page size + OOB size)\n"\
 		" -I             ECC ignore errors(for read test only)\n"\
