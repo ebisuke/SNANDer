@@ -147,7 +147,8 @@ static int snor_wait_ready(int sleep_ms)
 	for (count = 0; count < ((sleep_ms + 1) * 1000); count++) {
 		if ((snor_read_sr((u8 *)&sr)) < 0)
 			break;
-		else if (!(sr & (SR_WIP | SR_EPE | SR_WEL))) {
+		//| SR_WEL
+		else if (!(sr & (SR_WIP | SR_EPE))) {
 			return 0;
 		}
 		udelay(500);
