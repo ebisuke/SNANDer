@@ -400,7 +400,7 @@ int ch341a_spi_shutdown(void)
 	return 0;
 }
 
-int ch341a_spi_init(void)
+int ch341a_spi_init(const char *connection)
 {
 	if (handle != NULL) {
 		printf("%s: handle already set!\n", __func__);

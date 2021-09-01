@@ -69,6 +69,7 @@ void usage(void)
 		"  Usage:\n"\
 		" -h             display this message\n"\
 		" -p             programmer {ch341a} (default ch341a)\n"\
+		" -c             programmer connection string\n"\
 		" -d             disable internal ECC(use read and write page size + OOB size)\n"\
 		" -I             ECC ignore errors(for read test only)\n"\
 		" -L             print list support chips\n"\
@@ -101,9 +102,9 @@ int main(int argc, char* argv[])
 	title();
 
 #ifdef EEPROM_SUPPORT
-	while ((c = getopt(argc, argv, "diIhveLl:a:w:r:E:f:8p:")) != -1)
+	while ((c = getopt(argc, argv, "diIhveLl:a:w:r:E:f:8p:c:")) != -1)
 #else
-	while ((c = getopt(argc, argv, "diIhveLl:a:w:r:p:")) != -1)
+	while ((c = getopt(argc, argv, "diIhveLl:a:w:r:p:c:")) != -1)
 #endif
 	{
 		switch(c)
@@ -123,6 +124,10 @@ int main(int argc, char* argv[])
 					return 1;
 				}
 
+				break;
+			case 'c':
+				connection = strdup(optarg);
+				printf("connection %s\n", connection);
 				break;
 #ifdef EEPROM_SUPPORT
 			case 'E':
@@ -217,7 +222,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	if (spi_controller->init() < 0) {
+	if (spi_controller->init(connection) < 0) {
 		printf("Programmer device not found!\n\n");
 		return -1;
 	}

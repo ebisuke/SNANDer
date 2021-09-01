@@ -54,7 +54,7 @@ typedef enum{
 
 struct spi_controller {
 	const char *name;
-	int (*init)(void);
+	int (*init)(const char *);
 	int (*shutdown)(void);
 	int (*send_command)(unsigned int, unsigned int, const unsigned char *, unsigned char *);
 	int (*cs_assert)(void);
