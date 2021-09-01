@@ -8,7 +8,7 @@ EEPROM_SUPPORT = y
 MSTARDDC_SUPPORT = y
 
 BIGFILES=-D_FILE_OFFSET_BITS=64
-CFLAGS=-O2 -std=gnu99 -Wall -I./lusb_build/include $(BIGFILES) `pkg-config --cflags $(LIBS)`
+CFLAGS=-O2 -std=gnu99 -Wall -I./lusb_build/include $(BIGFILES) `pkg-config --cflags $(LIBS)` -g
 
 OBJS=flashcmd_api.o \
 	spi_controller.o \
