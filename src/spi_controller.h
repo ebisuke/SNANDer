@@ -52,6 +52,20 @@ typedef enum{
 	SPI_CONTROLLER_MODE_NO
 } SPI_CONTROLLER_MODE_T;
 
+struct spi_controller {
+	const char *name;
+	int (*init)(void);
+	int (*shutdown)(void);
+	int (*send_command)(unsigned int, unsigned int, const unsigned char *, unsigned char *);
+	int (*cs_assert)(void);
+	int (*cs_release)(void);
+	unsigned int max_transfer;
+};
+
+extern const struct spi_controller ch341a_spictrl;
+
+extern const struct spi_controller *spi_controller;
+
 /*------------------------------------------------------------------------------------
  * FUNCTION: SPI_CONTROLLER_RTN_T SPI_CONTROLLER_Enable_Manual_Mode( void )
  * PURPOSE : To provide interface for enable SPI Controller Manual Mode Enable.

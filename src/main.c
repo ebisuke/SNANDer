@@ -26,11 +26,15 @@
 #include <stdio.h>
 
 #include "flashcmd_api.h"
-#include "ch341a_spi.h"
+#include "spi_controller.h"
 #include "spi_nand_flash.h"
 
 struct flash_cmd prog;
 extern unsigned int bsize;
+
+static const struct spi_controller *spi_controllers[] = {
+	&ch341a_spictrl,
+};
 
 #ifdef EEPROM_SUPPORT
 #include "ch341a_i2c.h"
@@ -79,13 +83,19 @@ void usage(void)
 	exit(0);
 }
 
+const struct spi_controller *spi_controller;
+
 int main(int argc, char* argv[])
 {
 	int c, vr = 0, svr = 0, ret = 0;
 	char *str, *fname = NULL, op = 0;
 	unsigned char *buf;
 	int long long len = 0, addr = 0, flen = 0, wlen = 0;
+	char *programmer;
+	char *connection = NULL;
 	FILE *fp;
+
+	spi_controller = spi_controllers[0];
 
 	title();
 
@@ -190,7 +200,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	if (ch341a_spi_init() < 0) {
+	if (spi_controller->init() < 0) {
 		printf("Programmer device not found!\n\n");
 		return -1;
 	}
@@ -320,6 +330,6 @@ very:
 	}
 
 out:
-	ch341a_spi_shutdown();
+	spi_controller->shutdown();
 	return 0;
 }
