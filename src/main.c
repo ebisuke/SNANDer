@@ -68,6 +68,7 @@ void usage(void)
 	const char use[] =
 		"  Usage:\n"\
 		" -h             display this message\n"\
+		" -p             programmer {ch341a} (default ch341a)\n"\
 		" -d             disable internal ECC(use read and write page size + OOB size)\n"\
 		" -I             ECC ignore errors(for read test only)\n"\
 		" -L             print list support chips\n"\
@@ -87,7 +88,7 @@ const struct spi_controller *spi_controller;
 
 int main(int argc, char* argv[])
 {
-	int c, vr = 0, svr = 0, ret = 0;
+	int c, vr = 0, svr = 0, ret = 0, i;
 	char *str, *fname = NULL, op = 0;
 	unsigned char *buf;
 	int long long len = 0, addr = 0, flen = 0, wlen = 0;
@@ -100,13 +101,29 @@ int main(int argc, char* argv[])
 	title();
 
 #ifdef EEPROM_SUPPORT
-	while ((c = getopt(argc, argv, "diIhveLl:a:w:r:E:f:8")) != -1)
+	while ((c = getopt(argc, argv, "diIhveLl:a:w:r:E:f:8p:")) != -1)
 #else
-	while ((c = getopt(argc, argv, "diIhveLl:a:w:r:")) != -1)
+	while ((c = getopt(argc, argv, "diIhveLl:a:w:r:p:")) != -1)
 #endif
 	{
 		switch(c)
 		{
+			case 'p':
+				programmer = strdup(optarg);
+				spi_controller = NULL;
+				for (i = 0; i < sizeof(spi_controllers)/sizeof(spi_controllers[0]); i++) {
+					if(strcmp(spi_controllers[i]->name, programmer) == 0) {
+						spi_controller = spi_controllers[i];
+						break;
+					}
+				}
+
+				if (spi_controller == NULL) {
+					printf("unknown programmer \"%s\"\n", programmer);
+					return 1;
+				}
+
+				break;
 #ifdef EEPROM_SUPPORT
 			case 'E':
 				if ((eepromsize = parseEEPsize(optarg, &eeprom_info)) > 0) {
