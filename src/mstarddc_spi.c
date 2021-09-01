@@ -1,5 +1,5 @@
 /*
- * This file is part of the flashrom project.
+ * This file was part of the flashrom project.
  *
  * Copyright (C) 2014 Alexandre Boeglin <alex@boeglin.org>
  * Copyright (C) 2021 Daniel Palmer <daniel@thingy.jp>
@@ -190,6 +190,7 @@ static int mstarddc_spi_init(const char *connection)
 		ret = -1;
 		goto out;
 	}
+
 	// Set slave address
 	if (ioctl(mstarddc_fd, I2C_SLAVE, mstarddc_addr) < 0) {
 		msg_perr("Error setting slave address 0x%02x: errno %d.\n",
