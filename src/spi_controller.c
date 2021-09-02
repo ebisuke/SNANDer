@@ -86,7 +86,7 @@ SPI_CONTROLLER_RTN_T SPI_CONTROLLER_Write_NByte( u8 *ptr_data, u32 len, SPI_CONT
 			break;
 	}
 
-	return (SPI_CONTROLLER_RTN_T)spi_controller->send_command(len, 0, ptr_data, NULL);
+	return (SPI_CONTROLLER_RTN_T) ret;
 }
 
 #if 0
