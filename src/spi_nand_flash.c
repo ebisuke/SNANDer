@@ -16,7 +16,7 @@
  *      SPI_NAND_Flash_Read_DWord       To provide interface for read Double Word from SPI NAND Flash.
  *      SPI_NAND_Flash_Read_NByte       To provide interface for Read N Bytes from SPI NAND Flash.
  *      SPI_NAND_Flash_Erase            To provide interface for Erase SPI NAND Flash.
- * 
+ *
  * DEPENDENCIES
  *
  * * $History: $
@@ -2027,14 +2027,18 @@ static SPI_NAND_FLASH_RTN_T spi_nand_protocol_read_id ( struct SPI_NAND_FLASH_IN
 	_SPI_NAND_WRITE_ONE_BYTE( _SPI_NAND_ADDR_MANUFACTURE_ID );
 
 	/* 4. Read data (Manufacture ID and Device ID) */
-	_SPI_NAND_READ_NBYTE( &(ptr_rtn_flash_id->mfr_id), _SPI_NAND_LEN_ONE_BYTE, SPI_CONTROLLER_SPEED_SINGLE);
-	_SPI_NAND_READ_NBYTE( &(ptr_rtn_flash_id->dev_id), _SPI_NAND_LEN_ONE_BYTE, SPI_CONTROLLER_SPEED_SINGLE);
+	uint8_t tmp[2];
+	_SPI_NAND_READ_NBYTE(tmp, 2, SPI_CONTROLLER_SPEED_SINGLE);
+
+	ptr_rtn_flash_id->mfr_id = tmp[0];
+	ptr_rtn_flash_id->dev_id = tmp[1];
 
 	/* 5. Chip Select High */
 	_SPI_NAND_READ_CHIP_SELECT_HIGH();
 
-	_SPI_NAND_DEBUG_PRINTF(SPI_NAND_FLASH_DEBUG_LEVEL_1, "spi_nand_protocol_read_id : mfr_id = 0x%x, dev_id = 0x%x\n", ptr_rtn_flash_id->mfr_id, ptr_rtn_flash_id->dev_id);
-	
+	_SPI_NAND_DEBUG_PRINTF(SPI_NAND_FLASH_DEBUG_LEVEL_1, "spi_nand_protocol_read_id : mfr_id = 0x%x, dev_id = 0x%x\n",
+		ptr_rtn_flash_id->mfr_id, ptr_rtn_flash_id->dev_id);
+
 	return (rtn_status);
 }
 
@@ -2066,13 +2070,17 @@ static SPI_NAND_FLASH_RTN_T spi_nand_protocol_read_id_2 ( struct SPI_NAND_FLASH_
 	_SPI_NAND_WRITE_ONE_BYTE( _SPI_NAND_OP_READ_ID );
 
 	/* 3. Read data (Manufacture ID and Device ID) */
-	_SPI_NAND_READ_NBYTE( &(ptr_rtn_flash_id->mfr_id), _SPI_NAND_LEN_ONE_BYTE, SPI_CONTROLLER_SPEED_SINGLE);
-	_SPI_NAND_READ_NBYTE( &(ptr_rtn_flash_id->dev_id), _SPI_NAND_LEN_ONE_BYTE, SPI_CONTROLLER_SPEED_SINGLE);
+	uint8_t tmp[2];
+	_SPI_NAND_READ_NBYTE(tmp, 2, SPI_CONTROLLER_SPEED_SINGLE);
+
+	ptr_rtn_flash_id->mfr_id = tmp[0];
+	ptr_rtn_flash_id->dev_id = tmp[1];
 
 	/* 4. Chip Select High */
 	_SPI_NAND_READ_CHIP_SELECT_HIGH();
 
-	_SPI_NAND_DEBUG_PRINTF(SPI_NAND_FLASH_DEBUG_LEVEL_1, "spi_nand_protocol_read_id_2 : mfr_id = 0x%x, dev_id = 0x%x\n", ptr_rtn_flash_id->mfr_id, ptr_rtn_flash_id->dev_id);
+	_SPI_NAND_DEBUG_PRINTF(SPI_NAND_FLASH_DEBUG_LEVEL_1, "spi_nand_protocol_read_id_2 : mfr_id = 0x%x, dev_id = 0x%x\n",
+		ptr_rtn_flash_id->mfr_id, ptr_rtn_flash_id->dev_id);
 
 	return (rtn_status);
 }
@@ -3803,7 +3811,7 @@ static SPI_NAND_FLASH_RTN_T spi_nand_probe( struct SPI_NAND_FLASH_INFO_T *ptr_rt
 
 	if ( rtn_status != SPI_NAND_FLASH_RTN_NO_ERROR )
 	{
-		/* Another protocol for read id  (For example, the Toshiba/KIOXIA SPI NADN chip */
+		/* Another protocol for read id  (For example, the Toshiba/KIOXIA SPI NAND chip */
 		_SPI_NAND_SEMAPHORE_LOCK();
 		spi_nand_protocol_read_id_3( ptr_rtn_device_t );
 		_SPI_NAND_SEMAPHORE_UNLOCK();
