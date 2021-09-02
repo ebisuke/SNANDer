@@ -67,6 +67,9 @@ static int mstarddc_spi_send_command(unsigned int writecnt,
 {
 	int ret = 0;
 	uint8_t *cmd = malloc((writecnt + 1) * sizeof(uint8_t));
+
+	//printf("sendcommand %d %d\n", writecnt, readcnt);
+
 	if (cmd == NULL) {
 		msg_perr("Error allocating memory: errno %d.\n", errno);
 		ret = -1;
@@ -122,6 +125,8 @@ static int mstarddc_spi_send_command(unsigned int writecnt,
 static int mstarddc_spi_end_command(void)
 {
 	uint8_t cmd[1];
+
+	//printf("end command\n");
 
 	cmd[0] = MSTARDDC_SPI_END;
 	if (write(mstarddc_data->fd, cmd, 1) < 0) {
