@@ -114,6 +114,7 @@
 #define _SPI_NAND_MANUFACTURER_ID_DS			0xE5
 #define _SPI_NAND_MANUFACTURER_ID_FISON			0x6B
 #define _SPI_NAND_MANUFACTURER_ID_TYM			0x19
+#define _SPI_NAND_MANUFACTURER_ID_XINCUN		0x9C
 
 /* SPI NAND Device ID */
 #define _SPI_NAND_DEVICE_ID_GD5F1GQ4UAYIG	0xF1
@@ -193,6 +194,7 @@
 #define _SPI_NAND_DEVICE_ID_TYM25D2GA01		0x01
 #define _SPI_NAND_DEVICE_ID_TYM25D2GA02		0x02
 #define _SPI_NAND_DEVICE_ID_TYM25D1GA03		0x03
+#define _SPI_NAND_DEVICE_ID_XCSP1AAWHNT		0x01
 
 /* Others Define */
 #define _SPI_NAND_LEN_ONE_BYTE			(1)
@@ -1598,6 +1600,21 @@ static const struct SPI_NAND_FLASH_INFO_T spi_nand_flash_tables[] = {
 		dummy_mode: 				SPI_NAND_FLASH_READ_DUMMY_BYTE_APPEND,
 		read_mode:				SPI_NAND_FLASH_READ_SPEED_MODE_DUAL,
 		write_mode: 				SPI_NAND_FLASH_WRITE_SPEED_MODE_SINGLE,
+		oob_free_layout:			&ooblayout_tym,
+		feature:				SPI_NAND_FLASH_FEATURE_NONE,
+	},
+	// Xincun
+	{
+		mfr_id:					_SPI_NAND_MANUFACTURER_ID_XINCUN,
+		dev_id:					_SPI_NAND_DEVICE_ID_XCSP1AAWHNT,
+		ptr_name:				"XINCUN XCSP1AAWH-NT",
+		device_size:				_SPI_NAND_CHIP_SIZE_1GBIT,
+		page_size:				_SPI_NAND_PAGE_SIZE_2KBYTE,
+		oob_size:				_SPI_NAND_OOB_SIZE_64BYTE,
+		erase_size:				_SPI_NAND_BLOCK_SIZE_128KBYTE,
+		dummy_mode:				SPI_NAND_FLASH_READ_DUMMY_BYTE_APPEND,
+		read_mode:				SPI_NAND_FLASH_READ_SPEED_MODE_DUAL,
+		write_mode:				SPI_NAND_FLASH_WRITE_SPEED_MODE_SINGLE,
 		oob_free_layout:			&ooblayout_tym,
 		feature:				SPI_NAND_FLASH_FEATURE_NONE,
 	},
