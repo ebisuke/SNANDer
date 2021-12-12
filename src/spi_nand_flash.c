@@ -3768,7 +3768,10 @@ static SPI_NAND_FLASH_RTN_T spi_nand_probe( struct SPI_NAND_FLASH_INFO_T *ptr_rt
 
 	/* Protocol for read id */
 	_SPI_NAND_SEMAPHORE_LOCK();
+	printf("here xx1\n");
 	spi_nand_protocol_read_id( ptr_rtn_device_t );
+	spi_nand_protocol_read_id( ptr_rtn_device_t );
+	printf("here xx2\n");
 	_SPI_NAND_SEMAPHORE_UNLOCK();
 
 	for ( i = 0; i < (sizeof(spi_nand_flash_tables)/sizeof(struct SPI_NAND_FLASH_INFO_T)); i++)

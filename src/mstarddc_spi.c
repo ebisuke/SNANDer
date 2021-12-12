@@ -27,6 +27,7 @@
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "spi_controller.h"
 
@@ -65,7 +66,7 @@ static int mstarddc_spi_send_command(unsigned int writecnt,
 				     const unsigned char *writearr,
 				     unsigned char *readarr)
 {
-	int ret = 0;
+	int ret = 0, i;
 	uint8_t *cmd = malloc((writecnt + 1) * sizeof(uint8_t));
 
 	//printf("sendcommand %d %d\n", writecnt, readcnt);
@@ -88,6 +89,7 @@ static int mstarddc_spi_send_command(unsigned int writecnt,
 	if (!ret && readcnt) {
 		struct i2c_rdwr_ioctl_data i2c_data;
 		struct i2c_msg msg[2];
+		int tries = 10;
 
 		cmd[0] = MSTARDDC_SPI_READ;
 		i2c_data.nmsgs = 2;
@@ -101,12 +103,22 @@ static int mstarddc_spi_send_command(unsigned int writecnt,
 		i2c_data.msgs[1].flags = I2C_M_RD;
 		i2c_data.msgs[1].buf = readarr;
 
-		if (ioctl(mstarddc_data->fd, I2C_RDWR, &i2c_data) < 0) {
-			msg_perr("Error sending read command: errno %d.\n",
-				 errno);
-			ret = -1;
+		for(; tries; tries--) {
+			if (ioctl(mstarddc_data->fd, I2C_RDWR, &i2c_data) < 0) {
+				msg_perr("Error sending read command: errno %d, tries left %d\n", errno, tries);
+				ret = -1;
+			}
+			else {
+				ret = 0;
+				break;
+			}
 		}
 	}
+
+	//for (i = 0; i < writecnt; i++)
+	//	printf("w: 0x%02x\n", writearr[i]);
+	//for (i = 0; i < readcnt; i++)
+	//	printf("r: 0x%02x\n", readarr[i]);
 
 //	if (!ret && (writecnt || readcnt)) {
 //	}
@@ -125,17 +137,23 @@ static int mstarddc_spi_send_command(unsigned int writecnt,
 static int mstarddc_spi_end_command(void)
 {
 	uint8_t cmd[1];
+	uint8_t tries = 10;
+	bool success = false;
 
 	//printf("end command\n");
 
-	cmd[0] = MSTARDDC_SPI_END;
-	if (write(mstarddc_data->fd, cmd, 1) < 0) {
-		msg_perr("Error sending end command: errno %d.\n",
-			 errno);
-		return -1;
+	for (; tries; tries--){
+		cmd[0] = MSTARDDC_SPI_END;
+		if (write(mstarddc_data->fd, cmd, 1) < 0) {
+			msg_perr("Error sending end command: errno %d, tries left %d\n", errno, tries);
+		}
+		else {
+			success = false;
+			break;
+		}
 	}
 
-	return 0;
+	return success ? 0 : -1;
 }
 
 

@@ -579,7 +579,7 @@ int snor_erase(unsigned long offs, unsigned long len)
 int snor_read(unsigned char *buf, unsigned long from, unsigned long len)
 {
 	u32 read_addr, physical_read_addr, remain_len, data_offset;
-	unsigned transfer_sz = min(spi_controller->max_transfer, spi_chip_info->sector_size);
+	unsigned transfer_sz = 4096;
 
 	snor_dbg("%s: from:%x len:%x \n", __func__, from, len);
 
