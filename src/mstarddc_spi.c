@@ -31,6 +31,8 @@
 
 #include "spi_controller.h"
 
+//#define MSTARDDC_DEBUG
+
 #define msg_perr printf
 #define msg_pinfo printf
 
@@ -68,7 +70,9 @@ static int mstarddc_spi_send_command(unsigned int writecnt,
 {
 	int ret = 0, i,j;
 
-	printf("sendcommand %d %d\n", writecnt, readcnt);
+#ifdef MSTARDDC_DEBUG
+	printf("%s %d %d\n", __func__, writecnt, readcnt);
+#endif
 
 	if (!ret && writecnt) {
 		size_t cmdsz = (writecnt + 1) * sizeof(uint8_t);
@@ -142,6 +146,7 @@ static int mstarddc_spi_send_command(unsigned int writecnt,
 		}
 	}
 
+#ifdef MSTARDDC_DEBUG
 	for (i = 0; i < writecnt; i++){
 		if(i % 16 == 0)
 			printf("w: ");
@@ -158,6 +163,7 @@ static int mstarddc_spi_send_command(unsigned int writecnt,
 			printf("\n");
 	}
 	printf("\n");
+#endif
 
 //	if (!ret && (writecnt || readcnt)) {
 //	}
@@ -177,7 +183,10 @@ static int mstarddc_spi_end_command(void)
 	bool success = false;
 	struct i2c_rdwr_ioctl_data i2c_data;
 	struct i2c_msg msg[1];
-	printf("end command\n");
+
+#ifdef MSTARDDC_DEBUG
+	printf("%s\n", __func__);
+#endif
 
 	cmd[0] = MSTARDDC_SPI_END;
 
