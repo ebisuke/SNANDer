@@ -2387,7 +2387,7 @@ static SPI_NAND_FLASH_RTN_T spi_nand_protocol_program_load ( u32 addr,
 
 	ptr_dev_info_t = _SPI_NAND_GET_DEVICE_INFO_PTR;
 
-	printf("%s: addr = 0x%08x, len = 0x%08x\n", __func__, addr, len );
+	//printf("%s: addr = 0x%08x, len = 0x%08x\n", __func__, addr, len );
 
 	/* 1. Chip Select low */
 	_SPI_NAND_READ_CHIP_SELECT_LOW();
@@ -3186,10 +3186,9 @@ static SPI_NAND_FLASH_RTN_T spi_nand_write_page(u32 page_number,
 			case _SPI_NAND_MANUFACTURER_ID_FORESEE:
 			switch(ptr_dev_info_t->dev_id){
 			case _SPI_NAND_DEVICE_ID_FS35ND02GS3Y2:
-				printf("xx!\n");
 				break;
 			default:
-					weafter = true;
+				weafter = true;
 			}
 		}
 
@@ -3219,10 +3218,6 @@ static SPI_NAND_FLASH_RTN_T spi_nand_write_page(u32 page_number,
 			spi_nand_protocol_write_enable();
 
 			/* Program data into buffer of SPI NAND chip */
-			//spi_nand_protocol_program_load(0,
-			//			&_current_cache_page[0],
-			//			64,
-			//			speed_mode);
 			spi_nand_protocol_program_load(write_addr,
 						_current_cache_page,
 						((ptr_dev_info_t->page_size) + (ptr_dev_info_t->oob_size)),
