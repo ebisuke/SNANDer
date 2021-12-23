@@ -3311,7 +3311,8 @@ static SPI_NAND_FLASH_RTN_T spi_nand_write_internal( u32 dst_addr, u32 len, u32 
 		addr_offset = (physical_dst_addr % (ptr_dev_info_t->page_size));
 		page_number = (physical_dst_addr / (ptr_dev_info_t->page_size));
 
-		_SPI_NAND_DEBUG_PRINTF(SPI_NAND_FLASH_DEBUG_LEVEL_1, "\nspi_nand_write_internal: addr_offset = 0x%x, page_number = 0x%x, remain_len = 0x%x, page_size = 0x%x\n", addr_offset, page_number, remain_len,(ptr_dev_info_t->page_size) );		
+		_SPI_NAND_DEBUG_PRINTF(SPI_NAND_FLASH_DEBUG_LEVEL_1,
+				"\nspi_nand_write_internal: addr_offset = 0x%x, page_number = 0x%x, remain_len = 0x%x, page_size = 0x%x\n", addr_offset, page_number, remain_len,(ptr_dev_info_t->page_size) );
 		if( ((addr_offset + remain_len ) > (ptr_dev_info_t->page_size))  )  /* data cross over than 1 page range */
 		{
 			data_len = ((ptr_dev_info_t->page_size) - addr_offset);
@@ -4361,7 +4362,8 @@ int nandflash_write(unsigned long to, unsigned long len, unsigned long *retlen, 
 	ptr_dev_info_t  = _SPI_NAND_GET_DEVICE_INFO_PTR;
 
 	timer_start();
-	if( SPI_NAND_Flash_Write_Nbyte(to, len, (u32 *)retlen, buf, ptr_dev_info_t->write_mode) == SPI_NAND_FLASH_RTN_NO_ERROR )
+	if( SPI_NAND_Flash_Write_Nbyte(to, len, (u32 *)retlen, buf,
+			ptr_dev_info_t->write_mode) == SPI_NAND_FLASH_RTN_NO_ERROR )
 	{
 		timer_end();
 		return 0;
