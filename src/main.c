@@ -322,15 +322,23 @@ very:
 		}
 		if (svr) {
 			unsigned char ch1;
-			int i = 0;
+			int i;
+			bool passed = true;
 
 			fseek(fp, 0, SEEK_SET);
-			ch1 = (unsigned char)getc(fp);
 
-			while ((ch1 != EOF) && (i < len - 1) && (ch1 == buf[i++]))
-				ch1 = (unsigned char)getc(fp);
+			for(i = 0, ch1 = (unsigned char)getc(fp); i < len; ch1 = (unsigned char)getc(fp), i++){
+				if(ch1 == EOF){
+					printf("unexpected EOF\n");
+					break;
+				}
+				if(ch1 != buf[i]){
+					printf("0x%08x: 0x%02x should be 0x%02x\n", i, buf[i], ch1);
+					passed = false;
+				}
+			}
 
-			if (ch1 == buf[i])
+			if (passed)
 				printf("Status: OK\n");
 			else
 				printf("Status: BAD\n");

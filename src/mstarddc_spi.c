@@ -66,24 +66,48 @@ static int mstarddc_spi_send_command(unsigned int writecnt,
 				     const unsigned char *writearr,
 				     unsigned char *readarr)
 {
-	int ret = 0, i;
-	uint8_t *cmd = malloc((writecnt + 1) * sizeof(uint8_t));
+	int ret = 0, i,j;
 
-	//printf("sendcommand %d %d\n", writecnt, readcnt);
-
-	if (cmd == NULL) {
-		msg_perr("Error allocating memory: errno %d.\n", errno);
-		ret = -1;
-	}
+	printf("sendcommand %d %d\n", writecnt, readcnt);
 
 	if (!ret && writecnt) {
-		cmd[0] = MSTARDDC_SPI_WRITE;
-		memcpy(cmd + 1, writearr, writecnt);
-		if (write(mstarddc_data->fd, cmd, writecnt + 1) < 0) {
-			msg_perr("Error sending write command: errno %d.\n",
-				 errno);
+		size_t cmdsz = (writecnt + 1) * sizeof(uint8_t);
+		uint8_t *cmd = malloc(cmdsz);
+		struct i2c_rdwr_ioctl_data i2c_data;
+		struct i2c_msg msg[1];
+		int tries = 10;
+
+		if (cmd == NULL) {
+			msg_perr("Error allocating memory: errno %d.\n", errno);
 			ret = -1;
 		}
+
+		cmd[0] = MSTARDDC_SPI_WRITE;
+		memcpy(cmd + 1, writearr, writecnt);
+
+		memset(&i2c_data, 0, sizeof(i2c_data));
+		memset(&msg, 0, sizeof(msg));
+
+		i2c_data.nmsgs = 1;
+		i2c_data.msgs = msg;
+		i2c_data.msgs[0].addr = mstarddc_data->addr;
+		i2c_data.msgs[0].len = cmdsz;
+		i2c_data.msgs[0].flags = 0;
+		i2c_data.msgs[0].buf = cmd;
+
+		for(; tries; tries--) {
+			if (ioctl(mstarddc_data->fd, I2C_RDWR, &i2c_data) < 0) {
+				msg_perr("Error sending write command: errno %d, tries left %d\n", errno, tries);
+				ret = -1;
+			}
+			else {
+				ret = 0;
+				break;
+			}
+		}
+
+		if (cmd)
+			free(cmd);
 	}
 
 	if (!ret && readcnt) {
@@ -91,13 +115,16 @@ static int mstarddc_spi_send_command(unsigned int writecnt,
 		struct i2c_msg msg[2];
 		int tries = 10;
 
-		cmd[0] = MSTARDDC_SPI_READ;
+		memset(&i2c_data, 0, sizeof(i2c_data));
+		memset(&msg, 0, sizeof(msg));
+
+		uint8_t cmd = MSTARDDC_SPI_READ;
 		i2c_data.nmsgs = 2;
 		i2c_data.msgs = msg;
 		i2c_data.msgs[0].addr = mstarddc_data->addr;
 		i2c_data.msgs[0].len = 1;
 		i2c_data.msgs[0].flags = 0;
-		i2c_data.msgs[0].buf = cmd;
+		i2c_data.msgs[0].buf = &cmd;
 		i2c_data.msgs[1].addr = mstarddc_data->addr;
 		i2c_data.msgs[1].len = readcnt;
 		i2c_data.msgs[1].flags = I2C_M_RD;
@@ -115,10 +142,22 @@ static int mstarddc_spi_send_command(unsigned int writecnt,
 		}
 	}
 
-	//for (i = 0; i < writecnt; i++)
-	//	printf("w: 0x%02x\n", writearr[i]);
-	//for (i = 0; i < readcnt; i++)
-	//	printf("r: 0x%02x\n", readarr[i]);
+	for (i = 0; i < writecnt; i++){
+		if(i % 16 == 0)
+			printf("w: ");
+		printf("0x%02x ", writearr[i]);
+		if((i + 1) % 16 == 0)
+			printf("\n");
+	}
+	printf("\n");
+	for (i = 0; i < readcnt; i++){
+		if(i % 16 == 0)
+			printf("r: ");
+		printf("0x%02x ", readarr[i]);
+		if((i + 1) % 16 == 0)
+			printf("\n");
+	}
+	printf("\n");
 
 //	if (!ret && (writecnt || readcnt)) {
 //	}
@@ -128,32 +167,41 @@ static int mstarddc_spi_send_command(unsigned int writecnt,
 	if (ret != 0)
 		mstarddc_data->doreset = 0;
 
-	if (cmd)
-		free(cmd);
-
 	return ret;
 }
 
 static int mstarddc_spi_end_command(void)
 {
 	uint8_t cmd[1];
-	uint8_t tries = 10;
+	int tries = 10, ret;
 	bool success = false;
+	struct i2c_rdwr_ioctl_data i2c_data;
+	struct i2c_msg msg[1];
+	printf("end command\n");
 
-	//printf("end command\n");
+	cmd[0] = MSTARDDC_SPI_END;
 
-	for (; tries; tries--){
-		cmd[0] = MSTARDDC_SPI_END;
-		if (write(mstarddc_data->fd, cmd, 1) < 0) {
+	memset(&i2c_data, 0, sizeof(i2c_data));
+	memset(&msg, 0, sizeof(msg));
+
+	i2c_data.nmsgs = 1;
+	i2c_data.msgs = msg;
+	i2c_data.msgs[0].addr = mstarddc_data->addr;
+	i2c_data.msgs[0].len = 1;
+	i2c_data.msgs[0].buf = cmd;
+
+	for(; tries; tries--) {
+		if (ioctl(mstarddc_data->fd, I2C_RDWR, &i2c_data) < 0) {
 			msg_perr("Error sending end command: errno %d, tries left %d\n", errno, tries);
+			ret = -1;
 		}
 		else {
-			success = false;
+			ret = 0;
 			break;
 		}
 	}
 
-	return success ? 0 : -1;
+	return ret;
 }
 
 
@@ -261,5 +309,5 @@ const struct spi_controller mstarddc_spictrl = {
 	.shutdown = mstarddc_spi_shutdown,
 	.send_command = mstarddc_spi_send_command,
 	.cs_release = mstarddc_spi_end_command,
-	.max_transfer = 128,
+	.max_transfer = 64,
 };
