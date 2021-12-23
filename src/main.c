@@ -24,6 +24,7 @@
 #include <getopt.h>
 #include <time.h>
 #include <stdio.h>
+#include <sys/stat.h>
 
 #include "flashcmd_api.h"
 #include "spi_controller.h"
@@ -263,7 +264,15 @@ int main(int argc, char* argv[])
 
 	if ((op == 'r') || (op == 'w')) {
 		if(addr && !len)
-			len = flen - addr;
+			if(op == 'w') {
+				struct stat st;
+				ret = stat(fname, &st);
+				if(ret)
+					return ret;
+				len = st.st_size;
+			}
+			else
+				len = flen - addr;
 		else if(!addr && !len) {
 			len = flen;
 		}
