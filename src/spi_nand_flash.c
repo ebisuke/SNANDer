@@ -3322,8 +3322,19 @@ static SPI_NAND_FLASH_RTN_T spi_nand_write_internal( u32 dst_addr, u32 len, u32 
 			data_len = remain_len;
 		}
 
-		rtn_status = spi_nand_write_page(page_number, addr_offset, &(ptr_buf[len - remain_len]), data_len, 0, NULL, 0 , speed_mode);
-
+		/*
+		 * Check if the target page is all ones and skip it if that's
+		 * the case
+		 */
+		for(int i = 0; i < data_len; i++) {
+			if(ptr_buf[(len - remain_len) + i] != 0xff)
+				goto write;
+		}
+		goto skip;
+write:
+		rtn_status = spi_nand_write_page(page_number, addr_offset,
+				&(ptr_buf[len - remain_len]), data_len, 0, NULL, 0 , speed_mode);
+skip:
 		/* 8. Write remain data if neccessary */
 		write_addr += data_len;
 		remain_len -= data_len;
