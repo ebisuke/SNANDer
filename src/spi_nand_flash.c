@@ -2379,16 +2379,32 @@ static SPI_NAND_FLASH_RTN_T spi_nand_protocol_read_from_cache( u32 data_offset,
  *
  *------------------------------------------------------------------------------------
  */
-static SPI_NAND_FLASH_RTN_T spi_nand_protocol_program_load ( u32 addr,
-		u8 *ptr_data, u32 len, u32 write_mode)
+static SPI_NAND_FLASH_RTN_T _spi_nand_protocol_program_load (u32 addr,
+		u8 *ptr_data, u32 len, u32 write_mode, bool continuation)
 {
 	struct SPI_NAND_FLASH_INFO_T *ptr_dev_info_t;
 	SPI_NAND_FLASH_RTN_T rtn_status = SPI_NAND_FLASH_RTN_NO_ERROR;
 
 	ptr_dev_info_t = _SPI_NAND_GET_DEVICE_INFO_PTR;
 
-	//printf("%s: addr = 0x%08x, len = 0x%08x\n", __func__, addr, len );
+	printf("%s: addr = 0x%08x, len = 0x%08x\n", __func__, addr, len );
 
+	/*
+	 * The load program data opcode used causes the cache to be filled
+	 * with 1s. So we don't need to actually transfer sections of the
+	 * page that are all 1s. This reduces the amount of transactions
+	 * we need to do over USB, maybe i2c and maybe spi.
+	 */
+	if(continuation){
+		for(int i = 0; i < len; i++){
+			if(ptr_data[i] != 0xff)
+				goto senddata;
+		}
+		printf("chunk is all ones\n");
+		return rtn_status;
+	}
+
+senddata:
 	/* 1. Chip Select low */
 	_SPI_NAND_READ_CHIP_SELECT_LOW();
 #if 0
@@ -2409,7 +2425,18 @@ static SPI_NAND_FLASH_RTN_T spi_nand_protocol_program_load ( u32 addr,
 			break;
 	}
 #else
-	_SPI_NAND_WRITE_ONE_BYTE( _SPI_NAND_OP_PROGRAM_LOAD_SINGLE );
+
+	/*
+	 * First chunk is sent with load single to cause the cache to be set
+	 * to all 1s.
+	 * All following chunks use load random single to retain the already
+	 * loaded data.
+	 */
+	if(continuation)
+		_SPI_NAND_WRITE_ONE_BYTE(_SPI_NAND_OP_PROGRAM_LOAD_RAMDOM_SINGLE);
+	else
+		_SPI_NAND_WRITE_ONE_BYTE( _SPI_NAND_OP_PROGRAM_LOAD_SINGLE );
+
 #endif
 	/* 3. Send address offset */
 	if( ((ptr_dev_info_t->feature) & SPI_NAND_FLASH_PLANE_SELECT_HAVE) )
@@ -2424,18 +2451,18 @@ static SPI_NAND_FLASH_RTN_T spi_nand_protocol_program_load ( u32 addr,
 		}
 	}
 	else
-		_SPI_NAND_WRITE_ONE_BYTE( ((addr >> 8 ) & (0xff)) );
+		_SPI_NAND_WRITE_ONE_BYTE((addr >> 8) & 0xff);
 
-	_SPI_NAND_WRITE_ONE_BYTE( ((addr) & (0xff)) );
+	_SPI_NAND_WRITE_ONE_BYTE(addr & 0xff);
 
 	/* 4. Send data */
 	switch (write_mode)
 	{
 		case SPI_NAND_FLASH_WRITE_SPEED_MODE_SINGLE:
-			_SPI_NAND_WRITE_NBYTE( ptr_data, len, SPI_CONTROLLER_SPEED_SINGLE);
+			_SPI_NAND_WRITE_NBYTE(ptr_data, len, SPI_CONTROLLER_SPEED_SINGLE);
 			break;
 		case SPI_NAND_FLASH_WRITE_SPEED_MODE_QUAD:
-			_SPI_NAND_WRITE_NBYTE( ptr_data, len, SPI_CONTROLLER_SPEED_QUAD);
+			_SPI_NAND_WRITE_NBYTE(ptr_data, len, SPI_CONTROLLER_SPEED_QUAD);
 			break;
 		default:
 			break;
@@ -2443,6 +2470,21 @@ static SPI_NAND_FLASH_RTN_T spi_nand_protocol_program_load ( u32 addr,
 	
 	/* 5. Chip Select High */
 	_SPI_NAND_READ_CHIP_SELECT_HIGH();
+
+	return (rtn_status);
+}
+
+static SPI_NAND_FLASH_RTN_T spi_nand_protocol_program_load(u32 addr,
+		u8 *ptr_data, u32 len, u32 write_mode)
+{
+	SPI_NAND_FLASH_RTN_T rtn_status = SPI_NAND_FLASH_RTN_NO_ERROR;
+	int chunksz = 128;
+	int pos;
+
+	for(pos = 0; pos != len; pos += min(len - pos, chunksz)){
+		rtn_status = _spi_nand_protocol_program_load(pos, ptr_data + pos,
+				min(len - pos, chunksz),write_mode, pos != 0);
+	}
 
 	return (rtn_status);
 }
@@ -3326,6 +3368,7 @@ static SPI_NAND_FLASH_RTN_T spi_nand_write_internal( u32 dst_addr, u32 len, u32 
 		 * Check if the target page is all ones and skip it if that's
 		 * the case
 		 */
+		//printf("data len %d\n", data_len);
 		for(int i = 0; i < data_len; i++) {
 			if(ptr_buf[(len - remain_len) + i] != 0xff)
 				goto write;
