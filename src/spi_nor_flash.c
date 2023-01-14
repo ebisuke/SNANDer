@@ -147,7 +147,8 @@ static int snor_wait_ready(int sleep_ms)
 	for (count = 0; count < ((sleep_ms + 1) * 1000); count++) {
 		if ((snor_read_sr((u8 *)&sr)) < 0)
 			break;
-		else if (!(sr & (SR_WIP | SR_EPE | SR_WEL))) {
+		//| SR_WEL
+		else if (!(sr & (SR_WIP | SR_EPE))) {
 			return 0;
 		}
 		udelay(500);
@@ -578,6 +579,7 @@ int snor_erase(unsigned long offs, unsigned long len)
 int snor_read(unsigned char *buf, unsigned long from, unsigned long len)
 {
 	u32 read_addr, physical_read_addr, remain_len, data_offset;
+	unsigned transfer_sz = 4096;
 
 	snor_dbg("%s: from:%x len:%x \n", __func__, from, len);
 
@@ -596,7 +598,6 @@ int snor_read(unsigned char *buf, unsigned long from, unsigned long len)
 	remain_len = len;
 
 	while(remain_len > 0) {
-
 		physical_read_addr = read_addr;
 		data_offset = (physical_read_addr % (spi_chip_info->sector_size));
 
@@ -614,32 +615,28 @@ int snor_read(unsigned char *buf, unsigned long from, unsigned long len)
 		SPI_CONTROLLER_Write_One_Byte((physical_read_addr >> 8) & 0xff);
 		SPI_CONTROLLER_Write_One_Byte(physical_read_addr & 0xff);
 
-		if( (data_offset + remain_len) < spi_chip_info->sector_size )
-		{
-			if(SPI_CONTROLLER_Read_NByte(&buf[len - remain_len], remain_len, SPI_CONTROLLER_SPEED_SINGLE)) {
-				SPI_CONTROLLER_Chip_Select_High();
-				if (spi_chip_info->addr4b)
-					snor_4byte_mode(0);
-				len = -1;
-				break;
-			}
-			remain_len = 0;
-		} else {
-			if(SPI_CONTROLLER_Read_NByte(&buf[len - remain_len], spi_chip_info->sector_size - data_offset, SPI_CONTROLLER_SPEED_SINGLE)) {
-				SPI_CONTROLLER_Chip_Select_High();
-				if (spi_chip_info->addr4b)
-					snor_4byte_mode(0);
-				len = -1;
-				break;
-			}
-			remain_len -= spi_chip_info->sector_size - data_offset;
-			read_addr += spi_chip_info->sector_size - data_offset;
-			if ((read_addr & 0xffff) == 0) {
-				printf("\bRead %ld%% [%lu] of [%lu] bytes      ", 100 * (len - remain_len) / len, len - remain_len, len);
-				printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-				fflush(stdout);
-			}
+		unsigned int read_sz;
+		if((data_offset + remain_len) < transfer_sz)
+			read_sz = remain_len;
+		else
+			read_sz = transfer_sz;
+
+		if(SPI_CONTROLLER_Read_NByte(&buf[len - remain_len], read_sz, SPI_CONTROLLER_SPEED_SINGLE)) {
+			SPI_CONTROLLER_Chip_Select_High();
+			if (spi_chip_info->addr4b)
+				snor_4byte_mode(0);
+			len = -1;
+			break;
 		}
+
+		remain_len -= read_sz;
+		read_addr += read_sz;
+		//if ((read_addr & 0xffff) == 0) {
+			printf("\bRead %ld%% [%lu] of [%lu] bytes      ", 100 * (len - remain_len) / len, len - remain_len, len);
+			printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+			fflush(stdout);
+		//}
+
 
 		SPI_CONTROLLER_Chip_Select_High();
 

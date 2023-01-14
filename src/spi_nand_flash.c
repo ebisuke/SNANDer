@@ -16,7 +16,7 @@
  *      SPI_NAND_Flash_Read_DWord       To provide interface for read Double Word from SPI NAND Flash.
  *      SPI_NAND_Flash_Read_NByte       To provide interface for Read N Bytes from SPI NAND Flash.
  *      SPI_NAND_Flash_Erase            To provide interface for Erase SPI NAND Flash.
- * 
+ *
  * DEPENDENCIES
  *
  * * $History: $
@@ -114,6 +114,7 @@
 #define _SPI_NAND_MANUFACTURER_ID_DS			0xE5
 #define _SPI_NAND_MANUFACTURER_ID_FISON			0x6B
 #define _SPI_NAND_MANUFACTURER_ID_TYM			0x19
+#define _SPI_NAND_MANUFACTURER_ID_XINCUN		0x9C
 
 /* SPI NAND Device ID */
 #define _SPI_NAND_DEVICE_ID_GD5F1GQ4UAYIG	0xF1
@@ -186,6 +187,8 @@
 #define _SPI_NAND_DEVICE_ID_FS35ND01GS1F1	0xB1
 #define _SPI_NAND_DEVICE_ID_FS35ND02GS2F1	0xA2
 #define _SPI_NAND_DEVICE_ID_FS35ND02GD1F1	0xB2
+#define _SPI_NAND_DEVICE_ID_FS35ND02GS3Y2	0xEB
+#define _SPI_NAND_DEVICE_ID_FS35ND04GS2Y2	0xEC
 #define _SPI_NAND_DEVICE_ID_DS35Q2GA		0x72
 #define _SPI_NAND_DEVICE_ID_DS35Q1GA		0x71
 #define _SPI_NAND_DEVICE_ID_CS11G0T0A0AA	0x00
@@ -194,6 +197,7 @@
 #define _SPI_NAND_DEVICE_ID_TYM25D2GA01		0x01
 #define _SPI_NAND_DEVICE_ID_TYM25D2GA02		0x02
 #define _SPI_NAND_DEVICE_ID_TYM25D1GA03		0x03
+#define _SPI_NAND_DEVICE_ID_XCSP1AAWHNT		0x01
 
 /* Others Define */
 #define _SPI_NAND_LEN_ONE_BYTE			(1)
@@ -227,8 +231,8 @@
 #define _SPI_NAND_DEBUG_PRINTF(args...)
 #define _SPI_NAND_DEBUG_PRINTF_ARRAY(args...)
 #else
-#define _SPI_NAND_DEBUG_PRINTF			/* spi_nand_flash_debug_printf */
-#define _SPI_NAND_DEBUG_PRINTF_ARRAY		/* spi_nand_flash_debug_printf_array */
+#define _SPI_NAND_DEBUG_PRINTF(level, args...)		printf(args)	/* spi_nand_flash_debug_printf */
+#define _SPI_NAND_DEBUG_PRINTF_ARRAY(level, args...)	printf(args)	/* spi_nand_flash_debug_printf_array */
 #endif
 #define _SPI_NAND_ENABLE_MANUAL_MODE		SPI_CONTROLLER_Enable_Manual_Mode
 #define _SPI_NAND_WRITE_ONE_BYTE		SPI_CONTROLLER_Write_One_Byte
@@ -469,6 +473,17 @@ struct spi_nand_flash_ooblayout ooblayout_fison = {
 struct spi_nand_flash_ooblayout ooblayout_tym = {
 	.oobsize = 12,
 	.oobfree = {{0,3}, {16,3}, {32,3}, {48,3}}
+};
+
+struct spi_nand_flash_ooblayout ooblayout_xincun = {
+	.oobsize = 48,
+	.oobfree = {{16,48}, {116,12}}
+};
+
+/* only use user meta data with ECC protected */
+struct spi_nand_flash_ooblayout ooblayout_foresee = {
+	.oobsize = 64,
+	.oobfree = {{0,64}}
 };
 
 /*****************************[ Notice]******************************/
@@ -1504,6 +1519,35 @@ static const struct SPI_NAND_FLASH_INFO_T spi_nand_flash_tables[] = {
 	},
 
 	{
+		ptr_name:				"FORESEE FS35ND02G-S3Y2",
+		mfr_id:					_SPI_NAND_MANUFACTURER_ID_FORESEE,
+		dev_id:					_SPI_NAND_DEVICE_ID_FS35ND02GS3Y2,
+		device_size:				_SPI_NAND_CHIP_SIZE_2GBIT,
+		page_size:				_SPI_NAND_PAGE_SIZE_2KBYTE,
+		oob_size:				_SPI_NAND_OOB_SIZE_64BYTE,
+		erase_size:				_SPI_NAND_BLOCK_SIZE_128KBYTE,
+		dummy_mode:				SPI_NAND_FLASH_READ_DUMMY_BYTE_APPEND,
+		read_mode:				SPI_NAND_FLASH_READ_SPEED_MODE_SINGLE,
+		write_mode:				SPI_NAND_FLASH_WRITE_SPEED_MODE_SINGLE,
+		oob_free_layout:			&ooblayout_foresee,
+		feature:				SPI_NAND_FLASH_FEATURE_NONE,
+	},
+	{
+		ptr_name:				"FORESEE FS35ND04G-S2Y2",
+		mfr_id:					_SPI_NAND_MANUFACTURER_ID_FORESEE,
+		dev_id:					_SPI_NAND_DEVICE_ID_FS35ND04GS2Y2,
+		device_size:				_SPI_NAND_CHIP_SIZE_4GBIT,
+		page_size:				_SPI_NAND_PAGE_SIZE_2KBYTE,
+		oob_size:				_SPI_NAND_OOB_SIZE_64BYTE,
+		erase_size:				_SPI_NAND_BLOCK_SIZE_128KBYTE,
+		dummy_mode:				SPI_NAND_FLASH_READ_DUMMY_BYTE_APPEND,
+		read_mode:				SPI_NAND_FLASH_READ_SPEED_MODE_SINGLE,
+		write_mode:				SPI_NAND_FLASH_WRITE_SPEED_MODE_SINGLE,
+		oob_free_layout:			&ooblayout_foresee,
+		feature:				SPI_NAND_FLASH_FEATURE_NONE,
+	},
+
+	{
 		mfr_id: 				_SPI_NAND_MANUFACTURER_ID_DS,
 		dev_id: 				_SPI_NAND_DEVICE_ID_DS35Q2GA,
 		ptr_name:				"DS DS35Q2GA",
@@ -1615,6 +1659,21 @@ static const struct SPI_NAND_FLASH_INFO_T spi_nand_flash_tables[] = {
 		read_mode:				SPI_NAND_FLASH_READ_SPEED_MODE_DUAL,
 		write_mode: 				SPI_NAND_FLASH_WRITE_SPEED_MODE_SINGLE,
 		oob_free_layout:			&ooblayout_tym,
+		feature:				SPI_NAND_FLASH_FEATURE_NONE,
+	},
+	// Xincun
+	{
+		mfr_id:					_SPI_NAND_MANUFACTURER_ID_XINCUN,
+		dev_id:					_SPI_NAND_DEVICE_ID_XCSP1AAWHNT,
+		ptr_name:				"XINCUN XCSP1AAWH-NT",
+		device_size:				_SPI_NAND_CHIP_SIZE_1GBIT,
+		page_size:				_SPI_NAND_PAGE_SIZE_2KBYTE,
+		oob_size:				_SPI_NAND_OOB_SIZE_128BYTE,
+		erase_size:				_SPI_NAND_BLOCK_SIZE_128KBYTE,
+		dummy_mode:				SPI_NAND_FLASH_READ_DUMMY_BYTE_APPEND,
+		read_mode:				SPI_NAND_FLASH_READ_SPEED_MODE_DUAL,
+		write_mode:				SPI_NAND_FLASH_WRITE_SPEED_MODE_SINGLE,
+		oob_free_layout:			&ooblayout_xincun,
 		feature:				SPI_NAND_FLASH_FEATURE_NONE,
 	},
 };
@@ -2043,14 +2102,18 @@ static SPI_NAND_FLASH_RTN_T spi_nand_protocol_read_id ( struct SPI_NAND_FLASH_IN
 	_SPI_NAND_WRITE_ONE_BYTE( _SPI_NAND_ADDR_MANUFACTURE_ID );
 
 	/* 4. Read data (Manufacture ID and Device ID) */
-	_SPI_NAND_READ_NBYTE( &(ptr_rtn_flash_id->mfr_id), _SPI_NAND_LEN_ONE_BYTE, SPI_CONTROLLER_SPEED_SINGLE);
-	_SPI_NAND_READ_NBYTE( &(ptr_rtn_flash_id->dev_id), _SPI_NAND_LEN_ONE_BYTE, SPI_CONTROLLER_SPEED_SINGLE);
+	uint8_t tmp[2];
+	_SPI_NAND_READ_NBYTE(tmp, 2, SPI_CONTROLLER_SPEED_SINGLE);
+
+	ptr_rtn_flash_id->mfr_id = tmp[0];
+	ptr_rtn_flash_id->dev_id = tmp[1];
 
 	/* 5. Chip Select High */
 	_SPI_NAND_READ_CHIP_SELECT_HIGH();
 
-	_SPI_NAND_DEBUG_PRINTF(SPI_NAND_FLASH_DEBUG_LEVEL_1, "spi_nand_protocol_read_id : mfr_id = 0x%x, dev_id = 0x%x\n", ptr_rtn_flash_id->mfr_id, ptr_rtn_flash_id->dev_id);
-	
+	_SPI_NAND_DEBUG_PRINTF(SPI_NAND_FLASH_DEBUG_LEVEL_1, "spi_nand_protocol_read_id : mfr_id = 0x%x, dev_id = 0x%x\n",
+		ptr_rtn_flash_id->mfr_id, ptr_rtn_flash_id->dev_id);
+
 	return (rtn_status);
 }
 
@@ -2082,13 +2145,17 @@ static SPI_NAND_FLASH_RTN_T spi_nand_protocol_read_id_2 ( struct SPI_NAND_FLASH_
 	_SPI_NAND_WRITE_ONE_BYTE( _SPI_NAND_OP_READ_ID );
 
 	/* 3. Read data (Manufacture ID and Device ID) */
-	_SPI_NAND_READ_NBYTE( &(ptr_rtn_flash_id->mfr_id), _SPI_NAND_LEN_ONE_BYTE, SPI_CONTROLLER_SPEED_SINGLE);
-	_SPI_NAND_READ_NBYTE( &(ptr_rtn_flash_id->dev_id), _SPI_NAND_LEN_ONE_BYTE, SPI_CONTROLLER_SPEED_SINGLE);
+	uint8_t tmp[2];
+	_SPI_NAND_READ_NBYTE(tmp, 2, SPI_CONTROLLER_SPEED_SINGLE);
+
+	ptr_rtn_flash_id->mfr_id = tmp[0];
+	ptr_rtn_flash_id->dev_id = tmp[1];
 
 	/* 4. Chip Select High */
 	_SPI_NAND_READ_CHIP_SELECT_HIGH();
 
-	_SPI_NAND_DEBUG_PRINTF(SPI_NAND_FLASH_DEBUG_LEVEL_1, "spi_nand_protocol_read_id_2 : mfr_id = 0x%x, dev_id = 0x%x\n", ptr_rtn_flash_id->mfr_id, ptr_rtn_flash_id->dev_id);
+	_SPI_NAND_DEBUG_PRINTF(SPI_NAND_FLASH_DEBUG_LEVEL_1, "spi_nand_protocol_read_id_2 : mfr_id = 0x%x, dev_id = 0x%x\n",
+		ptr_rtn_flash_id->mfr_id, ptr_rtn_flash_id->dev_id);
 
 	return (rtn_status);
 }
@@ -2172,7 +2239,8 @@ static SPI_NAND_FLASH_RTN_T spi_nand_protocol_page_read ( u32 page_number )
 	/* 4. Chip Select High */
 	_SPI_NAND_READ_CHIP_SELECT_HIGH();
 
-	_SPI_NAND_DEBUG_PRINTF(SPI_NAND_FLASH_DEBUG_LEVEL_1, "spi_nand_load_page_into_cache: value = 0x%x\n", (page_number ) );
+	_SPI_NAND_DEBUG_PRINTF(SPI_NAND_FLASH_DEBUG_LEVEL_1,
+			"spi_nand_load_page_into_cache: value = 0x%x\n", (page_number ) );
 
 	return (rtn_status);
 }
@@ -2199,11 +2267,12 @@ static SPI_NAND_FLASH_RTN_T spi_nand_protocol_page_read ( u32 page_number )
  *
  *------------------------------------------------------------------------------------
  */
-static SPI_NAND_FLASH_RTN_T spi_nand_protocol_read_from_cache( u32 data_offset, u32 len, u8 *ptr_rtn_buf, u32 read_mode,
-										SPI_NAND_FLASH_READ_DUMMY_BYTE_T dummy_mode )
-{
-	struct SPI_NAND_FLASH_INFO_T *ptr_dev_info_t;
+
+static SPI_NAND_FLASH_RTN_T _spi_nand_protocol_read_from_cache( u32 data_offset,
+		u32 len, u8 *ptr_rtn_buf, u32 read_mode, SPI_NAND_FLASH_READ_DUMMY_BYTE_T dummy_mode ){
 	SPI_NAND_FLASH_RTN_T rtn_status = SPI_NAND_FLASH_RTN_NO_ERROR;
+
+	struct SPI_NAND_FLASH_INFO_T *ptr_dev_info_t;
 
 	ptr_dev_info_t = _SPI_NAND_GET_DEVICE_INFO_PTR;
 
@@ -2264,7 +2333,8 @@ static SPI_NAND_FLASH_RTN_T spi_nand_protocol_read_from_cache( u32 data_offset, 
 	}
 
 	if( dummy_mode == SPI_NAND_FLASH_READ_DUMMY_BYTE_PREPEND && 
-	  ((read_mode == SPI_NAND_FLASH_READ_SPEED_MODE_DUAL) || (read_mode == SPI_NAND_FLASH_READ_SPEED_MODE_QUAD)))
+	  ((read_mode == SPI_NAND_FLASH_READ_SPEED_MODE_DUAL) ||
+			  (read_mode == SPI_NAND_FLASH_READ_SPEED_MODE_QUAD)))
 	{
 		_SPI_NAND_WRITE_ONE_BYTE(0xff);		/* for dual/quad read dummy byte */
 	}
@@ -2293,6 +2363,28 @@ static SPI_NAND_FLASH_RTN_T spi_nand_protocol_read_from_cache( u32 data_offset, 
 
 	_SPI_NAND_DEBUG_PRINTF(SPI_NAND_FLASH_DEBUG_LEVEL_1, "spi_nand_protocol_read_from_cache : data_offset = 0x%x, buf = 0x%x\n", data_offset, ptr_rtn_buf);	
 
+	return rtn_status;
+}
+
+static SPI_NAND_FLASH_RTN_T spi_nand_protocol_read_from_cache( u32 data_offset,
+		u32 len, u8 *ptr_rtn_buf, u32 read_mode, SPI_NAND_FLASH_READ_DUMMY_BYTE_T dummy_mode )
+{
+	SPI_NAND_FLASH_RTN_T rtn_status = SPI_NAND_FLASH_RTN_NO_ERROR;
+	int chunksz = 64;
+	int pos;
+
+	/*
+	 * For mstar ddc we seem to loose bytes if the transfer is chunked
+	 * without resending the SPI commands. I think the controller is actually
+	 * clocking out a byte at the end at the end.
+	 * Resending the read command for each block to work around the spi
+	 * controller being out of sync.
+	 */
+	for(pos = 0; pos != len; pos += chunksz){
+		rtn_status = _spi_nand_protocol_read_from_cache(pos, chunksz,
+				ptr_rtn_buf + pos, read_mode, dummy_mode);
+	}
+
 	return (rtn_status);
 }
 
@@ -2318,15 +2410,32 @@ static SPI_NAND_FLASH_RTN_T spi_nand_protocol_read_from_cache( u32 data_offset, 
  *
  *------------------------------------------------------------------------------------
  */
-static SPI_NAND_FLASH_RTN_T spi_nand_protocol_program_load ( u32 addr, u8 *ptr_data, u32 len, u32 write_mode)
+static SPI_NAND_FLASH_RTN_T _spi_nand_protocol_program_load (u32 addr,
+		u8 *ptr_data, u32 len, u32 write_mode, bool continuation)
 {
 	struct SPI_NAND_FLASH_INFO_T *ptr_dev_info_t;
 	SPI_NAND_FLASH_RTN_T rtn_status = SPI_NAND_FLASH_RTN_NO_ERROR;
 
 	ptr_dev_info_t = _SPI_NAND_GET_DEVICE_INFO_PTR;
 
-	_SPI_NAND_DEBUG_PRINTF(SPI_NAND_FLASH_DEBUG_LEVEL_1, "spi_nand_protocol_program_load: addr = 0xl%x, len = 0x%x\n", addr, len );
+	printf("%s: addr = 0x%08x, len = 0x%08x\n", __func__, addr, len );
 
+	/*
+	 * The load program data opcode used causes the cache to be filled
+	 * with 1s. So we don't need to actually transfer sections of the
+	 * page that are all 1s. This reduces the amount of transactions
+	 * we need to do over USB, maybe i2c and maybe spi.
+	 */
+	if(continuation){
+		for(int i = 0; i < len; i++){
+			if(ptr_data[i] != 0xff)
+				goto senddata;
+		}
+		printf("chunk is all ones\n");
+		return rtn_status;
+	}
+
+senddata:
 	/* 1. Chip Select low */
 	_SPI_NAND_READ_CHIP_SELECT_LOW();
 #if 0
@@ -2347,7 +2456,18 @@ static SPI_NAND_FLASH_RTN_T spi_nand_protocol_program_load ( u32 addr, u8 *ptr_d
 			break;
 	}
 #else
-	_SPI_NAND_WRITE_ONE_BYTE( _SPI_NAND_OP_PROGRAM_LOAD_SINGLE );
+
+	/*
+	 * First chunk is sent with load single to cause the cache to be set
+	 * to all 1s.
+	 * All following chunks use load random single to retain the already
+	 * loaded data.
+	 */
+	if(continuation)
+		_SPI_NAND_WRITE_ONE_BYTE(_SPI_NAND_OP_PROGRAM_LOAD_RAMDOM_SINGLE);
+	else
+		_SPI_NAND_WRITE_ONE_BYTE( _SPI_NAND_OP_PROGRAM_LOAD_SINGLE );
+
 #endif
 	/* 3. Send address offset */
 	if( ((ptr_dev_info_t->feature) & SPI_NAND_FLASH_PLANE_SELECT_HAVE) )
@@ -2362,30 +2482,41 @@ static SPI_NAND_FLASH_RTN_T spi_nand_protocol_program_load ( u32 addr, u8 *ptr_d
 		}
 	}
 	else
-	{
-		_SPI_NAND_WRITE_ONE_BYTE( ((addr >> 8 ) & (0xff)) );
-	}
+		_SPI_NAND_WRITE_ONE_BYTE((addr >> 8) & 0xff);
 
-	_SPI_NAND_WRITE_ONE_BYTE( ((addr)        & (0xff)) );
+	_SPI_NAND_WRITE_ONE_BYTE(addr & 0xff);
 
 	/* 4. Send data */
 	switch (write_mode)
 	{
 		case SPI_NAND_FLASH_WRITE_SPEED_MODE_SINGLE:
-			_SPI_NAND_WRITE_NBYTE( ptr_data, len, SPI_CONTROLLER_SPEED_SINGLE);
+			_SPI_NAND_WRITE_NBYTE(ptr_data, len, SPI_CONTROLLER_SPEED_SINGLE);
 			break;
-
 		case SPI_NAND_FLASH_WRITE_SPEED_MODE_QUAD:
-			_SPI_NAND_WRITE_NBYTE( ptr_data, len, SPI_CONTROLLER_SPEED_QUAD);
+			_SPI_NAND_WRITE_NBYTE(ptr_data, len, SPI_CONTROLLER_SPEED_QUAD);
 			break;
-
 		default:
 			break;
 	}
 	
 	/* 5. Chip Select High */
 	_SPI_NAND_READ_CHIP_SELECT_HIGH();
-	
+
+	return (rtn_status);
+}
+
+static SPI_NAND_FLASH_RTN_T spi_nand_protocol_program_load(u32 addr,
+		u8 *ptr_data, u32 len, u32 write_mode)
+{
+	SPI_NAND_FLASH_RTN_T rtn_status = SPI_NAND_FLASH_RTN_NO_ERROR;
+	int chunksz = 128;
+	int pos;
+
+	for(pos = 0; pos != len; pos += min(len - pos, chunksz)){
+		rtn_status = _spi_nand_protocol_program_load(pos, ptr_data + pos,
+				min(len - pos, chunksz),write_mode, pos != 0);
+	}
+
 	return (rtn_status);
 }
 
@@ -3052,8 +3183,14 @@ noecc:
 	return rtn_status;
 }
 
-static SPI_NAND_FLASH_RTN_T spi_nand_write_page( u32 page_number, u32 data_offset, u8  *ptr_data, u32 data_len, u32 oob_offset, u8  *ptr_oob,
-											u32 oob_len, SPI_NAND_FLASH_WRITE_SPEED_MODE_T speed_mode )
+static SPI_NAND_FLASH_RTN_T spi_nand_write_page(u32 page_number,
+		u32 data_offset,
+		u8  *ptr_data,
+		u32 data_len,
+		u32 oob_offset,
+		u8  *ptr_oob,
+		u32 oob_len,
+		SPI_NAND_FLASH_WRITE_SPEED_MODE_T speed_mode)
 {
 		u8 status, status_2;
 		u32 i = 0, j = 0, idx = 0;
@@ -3118,21 +3255,34 @@ static SPI_NAND_FLASH_RTN_T spi_nand_write_page( u32 page_number, u32 data_offse
 
 		spi_nand_select_die ( page_number );
 
-		/* Different Manafacture have different prgoram flow and setting */
-		if( ((ptr_dev_info_t->mfr_id) == _SPI_NAND_MANUFACTURER_ID_GIGADEVICE) ||
+		bool weafter = false;
+		switch(ptr_dev_info_t->mfr_id){
+			case _SPI_NAND_MANUFACTURER_ID_FORESEE:
+			switch(ptr_dev_info_t->dev_id){
+			case _SPI_NAND_DEVICE_ID_FS35ND02GS3Y2:
+				break;
+			default:
+				weafter = true;
+			}
+		}
+
+		/* Different Manufacturer have different program flow and setting */
+		if(weafter ||
+			((ptr_dev_info_t->mfr_id) == _SPI_NAND_MANUFACTURER_ID_GIGADEVICE) ||
 			((ptr_dev_info_t->mfr_id) == _SPI_NAND_MANUFACTURER_ID_PN) ||
 			((ptr_dev_info_t->mfr_id) == _SPI_NAND_MANUFACTURER_ID_FM) ||
 			((ptr_dev_info_t->mfr_id) == _SPI_NAND_MANUFACTURER_ID_XTX) ||
-			((ptr_dev_info_t->mfr_id) == _SPI_NAND_MANUFACTURER_ID_FORESEE) ||
 			((ptr_dev_info_t->mfr_id) == _SPI_NAND_MANUFACTURER_ID_FISON) ||
 			((ptr_dev_info_t->mfr_id) == _SPI_NAND_MANUFACTURER_ID_TYM) ||
 			((ptr_dev_info_t->mfr_id) == _SPI_NAND_MANUFACTURER_ID_ATO_2) ||
 			(((ptr_dev_info_t->mfr_id) == _SPI_NAND_MANUFACTURER_ID_ATO) && ((ptr_dev_info_t->dev_id) == _SPI_NAND_DEVICE_ID_ATO25D2GA)))
 		{
 			{
-				spi_nand_protocol_program_load(write_addr, &_current_cache_page[0], ((ptr_dev_info_t->page_size) + (ptr_dev_info_t->oob_size)), speed_mode);
+				spi_nand_protocol_program_load(write_addr,
+						&_current_cache_page[0],
+						((ptr_dev_info_t->page_size) + (ptr_dev_info_t->oob_size)),
+						speed_mode);
 			}
-
 			/* Enable write_to flash */
 			spi_nand_protocol_write_enable();
 		}
@@ -3141,10 +3291,11 @@ static SPI_NAND_FLASH_RTN_T spi_nand_write_page( u32 page_number, u32 data_offse
 			/* Enable write_to flash */
 			spi_nand_protocol_write_enable();
 
-			{
-				/* Proram data into buffer of SPI NAND chip */
-				spi_nand_protocol_program_load(write_addr, &_current_cache_page[0], ((ptr_dev_info_t->page_size) + (ptr_dev_info_t->oob_size)), speed_mode);
-			}
+			/* Program data into buffer of SPI NAND chip */
+			spi_nand_protocol_program_load(write_addr,
+						_current_cache_page,
+						((ptr_dev_info_t->page_size) + (ptr_dev_info_t->oob_size)),
+						speed_mode);
 		}
 
 		/* Execute program data into SPI NAND chip  */
@@ -3234,7 +3385,8 @@ static SPI_NAND_FLASH_RTN_T spi_nand_write_internal( u32 dst_addr, u32 len, u32 
 		addr_offset = (physical_dst_addr % (ptr_dev_info_t->page_size));
 		page_number = (physical_dst_addr / (ptr_dev_info_t->page_size));
 
-		_SPI_NAND_DEBUG_PRINTF(SPI_NAND_FLASH_DEBUG_LEVEL_1, "\nspi_nand_write_internal: addr_offset = 0x%x, page_number = 0x%x, remain_len = 0x%x, page_size = 0x%x\n", addr_offset, page_number, remain_len,(ptr_dev_info_t->page_size) );		
+		_SPI_NAND_DEBUG_PRINTF(SPI_NAND_FLASH_DEBUG_LEVEL_1,
+				"\nspi_nand_write_internal: addr_offset = 0x%x, page_number = 0x%x, remain_len = 0x%x, page_size = 0x%x\n", addr_offset, page_number, remain_len,(ptr_dev_info_t->page_size) );
 		if( ((addr_offset + remain_len ) > (ptr_dev_info_t->page_size))  )  /* data cross over than 1 page range */
 		{
 			data_len = ((ptr_dev_info_t->page_size) - addr_offset);
@@ -3244,8 +3396,20 @@ static SPI_NAND_FLASH_RTN_T spi_nand_write_internal( u32 dst_addr, u32 len, u32 
 			data_len = remain_len;
 		}
 
-		rtn_status = spi_nand_write_page(page_number, addr_offset, &(ptr_buf[len - remain_len]), data_len, 0, NULL, 0 , speed_mode);
-
+		/*
+		 * Check if the target page is all ones and skip it if that's
+		 * the case
+		 */
+		//printf("data len %d\n", data_len);
+		for(int i = 0; i < data_len; i++) {
+			if(ptr_buf[(len - remain_len) + i] != 0xff)
+				goto write;
+		}
+		goto skip;
+write:
+		rtn_status = spi_nand_write_page(page_number, addr_offset,
+				&(ptr_buf[len - remain_len]), data_len, 0, NULL, 0 , speed_mode);
+skip:
 		/* 8. Write remain data if neccessary */
 		write_addr += data_len;
 		remain_len -= data_len;
@@ -3756,7 +3920,10 @@ static SPI_NAND_FLASH_RTN_T spi_nand_probe( struct SPI_NAND_FLASH_INFO_T *ptr_rt
 
 	/* Protocol for read id */
 	_SPI_NAND_SEMAPHORE_LOCK();
+	printf("here xx1\n");
 	spi_nand_protocol_read_id( ptr_rtn_device_t );
+	spi_nand_protocol_read_id( ptr_rtn_device_t );
+	printf("here xx2\n");
 	_SPI_NAND_SEMAPHORE_UNLOCK();
 
 	for ( i = 0; i < (sizeof(spi_nand_flash_tables)/sizeof(struct SPI_NAND_FLASH_INFO_T)); i++)
@@ -3821,7 +3988,7 @@ static SPI_NAND_FLASH_RTN_T spi_nand_probe( struct SPI_NAND_FLASH_INFO_T *ptr_rt
 
 	if ( rtn_status != SPI_NAND_FLASH_RTN_NO_ERROR )
 	{
-		/* Another protocol for read id  (For example, the Toshiba/KIOXIA SPI NADN chip */
+		/* Another protocol for read id  (For example, the Toshiba/KIOXIA SPI NAND chip */
 		_SPI_NAND_SEMAPHORE_LOCK();
 		spi_nand_protocol_read_id_3( ptr_rtn_device_t );
 		_SPI_NAND_SEMAPHORE_UNLOCK();
@@ -4282,7 +4449,8 @@ int nandflash_write(unsigned long to, unsigned long len, unsigned long *retlen, 
 	ptr_dev_info_t  = _SPI_NAND_GET_DEVICE_INFO_PTR;
 
 	timer_start();
-	if( SPI_NAND_Flash_Write_Nbyte(to, len, (u32 *)retlen, buf, ptr_dev_info_t->write_mode) == SPI_NAND_FLASH_RTN_NO_ERROR )
+	if( SPI_NAND_Flash_Write_Nbyte(to, len, (u32 *)retlen, buf,
+			ptr_dev_info_t->write_mode) == SPI_NAND_FLASH_RTN_NO_ERROR )
 	{
 		timer_end();
 		return 0;

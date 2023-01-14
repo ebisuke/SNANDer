@@ -27,6 +27,8 @@
 #include <libusb-1.0/libusb.h>
 #include <stdbool.h>
 
+#include "spi_controller.h"
+
 /* LIBUSB_CALL ensures the right calling conventions on libusb callbacks.
  * However, the macro is not defined everywhere. m(
  */
@@ -306,7 +308,7 @@ static uint8_t swap_byte(uint8_t x)
  *	D6/21	unused	(DIN2)
  *	D7/22	SO/2	(DIN)
  */
-int enable_pins(bool enable)
+static int enable_pins(bool enable)
 {
 	uint8_t buf[] = {
 		CH341A_CMD_UIO_STREAM,
@@ -327,7 +329,7 @@ int enable_pins(bool enable)
 	return ret;
 }
 
-int ch341a_spi_send_command(unsigned int writecnt, unsigned int readcnt, const unsigned char *writearr, unsigned char *readarr)
+static int ch341a_spi_send_command(unsigned int writecnt, unsigned int readcnt, const unsigned char *writearr, unsigned char *readarr)
 {
 	int32_t ret = 0;
 
@@ -398,7 +400,7 @@ int ch341a_spi_shutdown(void)
 	return 0;
 }
 
-int ch341a_spi_init(void)
+int ch341a_spi_init(const char *connection)
 {
 	if (handle != NULL) {
 		printf("%s: handle already set!\n", __func__);
@@ -500,4 +502,12 @@ close_handle:
 	handle = NULL;
 	return -1;
 }
+
+const struct spi_controller ch341a_spictrl = {
+	.name = "ch431a",
+	.init = ch341a_spi_init,
+	.shutdown = ch341a_spi_shutdown,
+	.send_command = ch341a_spi_send_command,
+};
+
 /* End of [ch341a_spi.c] package */

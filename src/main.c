@@ -24,13 +24,19 @@
 #include <getopt.h>
 #include <time.h>
 #include <stdio.h>
+#include <sys/stat.h>
 
 #include "flashcmd_api.h"
-#include "ch341a_spi.h"
+#include "spi_controller.h"
 #include "spi_nand_flash.h"
 
 struct flash_cmd prog;
 extern unsigned int bsize;
+
+static const struct spi_controller *spi_controllers[] = {
+	&ch341a_spictrl,
+	&mstarddc_spictrl,
+};
 
 #ifdef EEPROM_SUPPORT
 #include "ch341a_i2c.h"
@@ -64,6 +70,8 @@ void usage(void)
 	const char use[] =
 		"  Usage:\n"\
 		" -h             display this message\n"\
+		" -p             programmer {ch341a|mstarddc} (default ch341a)\n"\
+		" -c             programmer connection string\n"\
 		" -d             disable internal ECC(use read and write page size + OOB size)\n"\
 		" -I             ECC ignore errors(for read test only)\n"\
 		" -L             print list support chips\n"\
@@ -79,24 +87,50 @@ void usage(void)
 	exit(0);
 }
 
+const struct spi_controller *spi_controller;
+
 int main(int argc, char* argv[])
 {
-	int c, vr = 0, svr = 0, ret = 0;
+	int c, vr = 0, svr = 0, ret = 0, i;
 	char *str, *fname = NULL, op = 0;
 	unsigned char *buf;
 	int long long len = 0, addr = 0, flen = 0, wlen = 0;
+	char *programmer;
+	char *connection = NULL;
 	FILE *fp;
+
+	spi_controller = spi_controllers[0];
 
 	title();
 
 #ifdef EEPROM_SUPPORT
-	while ((c = getopt(argc, argv, "diIhveLl:a:w:r:E:f:8")) != -1)
+	while ((c = getopt(argc, argv, "diIhveLl:a:w:r:E:f:8p:c:")) != -1)
 #else
-	while ((c = getopt(argc, argv, "diIhveLl:a:w:r:")) != -1)
+	while ((c = getopt(argc, argv, "diIhveLl:a:w:r:p:c:")) != -1)
 #endif
 	{
 		switch(c)
 		{
+			case 'p':
+				programmer = strdup(optarg);
+				spi_controller = NULL;
+				for (i = 0; i < sizeof(spi_controllers)/sizeof(spi_controllers[0]); i++) {
+					if(strcmp(spi_controllers[i]->name, programmer) == 0) {
+						spi_controller = spi_controllers[i];
+						break;
+					}
+				}
+
+				if (spi_controller == NULL) {
+					printf("unknown programmer \"%s\"\n", programmer);
+					return 1;
+				}
+
+				break;
+			case 'c':
+				connection = strdup(optarg);
+				printf("connection %s\n", connection);
+				break;
 #ifdef EEPROM_SUPPORT
 			case 'E':
 				if ((eepromsize = parseEEPsize(optarg, &eeprom_info)) > 0) {
@@ -190,7 +224,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	if (ch341a_spi_init() < 0) {
+	if (spi_controller->init(connection) < 0) {
 		printf("Programmer device not found!\n\n");
 		return -1;
 	}
@@ -230,7 +264,15 @@ int main(int argc, char* argv[])
 
 	if ((op == 'r') || (op == 'w')) {
 		if(addr && !len)
-			len = flen - addr;
+			if(op == 'w') {
+				struct stat st;
+				ret = stat(fname, &st);
+				if(ret)
+					return ret;
+				len = st.st_size;
+			}
+			else
+				len = flen - addr;
 		else if(!addr && !len) {
 			len = flen;
 		}
@@ -289,15 +331,23 @@ very:
 		}
 		if (svr) {
 			unsigned char ch1;
-			int i = 0;
+			int i;
+			bool passed = true;
 
 			fseek(fp, 0, SEEK_SET);
-			ch1 = (unsigned char)getc(fp);
 
-			while ((ch1 != EOF) && (i < len - 1) && (ch1 == buf[i++]))
-				ch1 = (unsigned char)getc(fp);
+			for(i = 0, ch1 = (unsigned char)getc(fp); i < len; ch1 = (unsigned char)getc(fp), i++){
+				if(ch1 == EOF){
+					printf("unexpected EOF\n");
+					break;
+				}
+				if(ch1 != buf[i]){
+					printf("0x%08x: 0x%02x should be 0x%02x\n", i, buf[i], ch1);
+					passed = false;
+				}
+			}
 
-			if (ch1 == buf[i])
+			if (passed)
 				printf("Status: OK\n");
 			else
 				printf("Status: BAD\n");
@@ -320,6 +370,6 @@ very:
 	}
 
 out:
-	ch341a_spi_shutdown();
+	spi_controller->shutdown();
 	return 0;
 }
